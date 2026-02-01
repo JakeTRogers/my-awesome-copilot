@@ -1,0 +1,13 @@
+---
+commitizen:
+  annotated_tag: true
+  bump_message: "bump: version v$current_version \u2192 v$new_version"
+  changelog_incremental: false
+  gpg_sign: true
+  name: cz_conventional_commits
+  tag_format: v$version
+  template: .cz.changelog.md.j2
+  update_changelog_on_bump: true
+  use_shortcuts: true
+  version: 0.1.0
+  version_scheme: semver
