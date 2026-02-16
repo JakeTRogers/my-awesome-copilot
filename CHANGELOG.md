@@ -1,3 +1,13 @@
+## v0.2.0 (2026-02-15)
+
+### Feature
+
+- **agents**: update promptly to use GPT-5 mini and add handoff to Plan agent
+
+### Fix
+
+- **instructions**: remove unnecessary code block language identifiers and extra markdown fences from markdown instructions
+
 ## v0.1.0 (2026-02-01)
 
 ### Feature
