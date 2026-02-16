@@ -51,14 +51,12 @@ The next paragraph starts here with a blank line before it.
 **REQUIRED:** All fenced code blocks (```) MUST have a blank line before them.
 
 ❌ **WRONG:**
-```markdown
 Here is some code:
 ```javascript
 const x = 1;
 ```
 
 ✅ **CORRECT:**
-```markdown
 Here is some code:
 
 ```javascript
@@ -70,13 +68,11 @@ const x = 1;
 **REQUIRED:** Every fenced code block MUST have a language identifier immediately after the opening ```.
 
 ❌ **WRONG:**
-```markdown
 ```
 const x = 1;
 ```
 
 ✅ **CORRECT:**
-```markdown
 ```javascript
 const x = 1;
 ```
@@ -88,21 +84,17 @@ const x = 1;
 **REQUIRED:** When placing code blocks inside list items, indent the code block with 8 spaces (double indent).
 
 ❌ **WRONG:**
-```markdown
 - Step 1: Do something
   ```javascript
   const x = 1;
   ```
-```
 
 ✅ **CORRECT:**
-```markdown
 - Step 1: Do something
 
-        ```javascript
-        const x = 1;
-        ```
-```
+    ```javascript
+    const x = 1;
+    ```
 
 ### Rule 6: NEVER Use Bare URLs
 
