@@ -1,3 +1,9 @@
+## v0.3.0 (2026-02-17)
+
+### Feature
+
+- **agents**: add vscode/askQuestions tool and Open in Editor handoff to promptly agent
+
 ## v0.2.0 (2026-02-15)
 
 ### Feature
