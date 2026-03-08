@@ -1,11 +1,13 @@
 ---
 name: pr
-description: 'Prompt and workflow for generating a PR title and a structured Mardown PR body by comparing the current branch against the main branch, grouping changes by Conventional Commit types, extracting meaningful notes from commit bodies, and listing issue references in a dedicated “Resolves” section.'
+description: 'Prompt and workflow for generating a PR title and a structured Markdown PR body by comparing the current branch against the main branch, grouping changes by Conventional Commit types, extracting meaningful notes from commit bodies, and listing issue references in a dedicated “Resolves” section.'
+agent: agent
+argument-hint: '[optional-base-branch]'
 model: GPT-4.1 (copilot)
-tools: ['execute/runInTerminal', 'execute/getTerminalOutput']
+tools: [vscode/askQuestions, execute/getTerminalOutput, execute/runInTerminal, read/readFile, search]
 ---
 
-# Instructions
+# Generate Pull Request
 
 ## Critical Rules
 
@@ -22,7 +24,7 @@ tools: ['execute/runInTerminal', 'execute/getTerminalOutput']
 
 ## Conventional Commits Types
 
-- feat: new feature(listed as `feat` in the commit for brevity, but should always be written out full for PR body: `feature`
+- feat: new feature; render this type under the `Feature` section in the PR body
 - fix: bug fix
 - docs: documentation only changes
 - style: formatting, white-space, etc. (no code meaning changes)
@@ -33,61 +35,75 @@ tools: ['execute/runInTerminal', 'execute/getTerminalOutput']
 - ci: changes to CI configuration files and scripts
 - revert: reverts a previous commit
 
+Unknown or non-standard commit types should be grouped under an `Other` section.
+
 BREAKING CHANGE: indicated by a trailing ! after type/scope or a footer/body line starting with “BREAKING CHANGE:”.
 
 ## Workflow
 
 1. Determine the current branch:
 
-- Run: `git rev-parse --abbrev-ref HEAD`
+  - Run: `git rev-parse --abbrev-ref HEAD`
 
 2. Determine the base branch:
 
-- If the users specifies a different default branch name, use it.
-- If main does not exist, run: `git branch --list`
+  - If the user specifies a different default branch name, use it.
+  - If main does not exist, run: `git branch --list`
     - Prefer master if present; otherwise consider trunk or develop if they exist.
-    - If more than one plausible base is found, ask the user to choose the base branch before proceeding.
+    - If more than one plausible base is found, use the `vscode/askQuestions` tool to ask the user to choose the base branch before proceeding.
 
-3. Collect commits unique to the current branch since its last common ancestor with the base (exclude merge commits):
+3. Collect commits unique to the current branch relative to the base (exclude merge commits):
 
-- Run: `git log --no-merges --pretty=format:%H%x00%s%x00%b BASE..HEAD`
-- Replace BASE with the resolved base branch.
-- This must return per commit: SHA, subject, and body separated by NULs (%x00).
+  - Run: `git log --no-merges --pretty=format:%H%x00%s%x00%b BASE..HEAD`
+  - Replace BASE with the resolved base branch.
+  - This must return per commit: SHA, subject, and body separated by NULs (%x00).
+  - If this command returns no commits, use the `vscode/askQuestions` tool to ask whether the user wants to compare against a different base branch before proceeding.
 
 4. Parse commit messages using Conventional Commits to identify type, optional scope, and subject:
 
-- Pattern: `type(scope)!: subject`
-- Recognize types listed above; unknown types go to other.
-- Detect breaking changes if type/scope has a trailing ! or the body contains a line beginning with “BREAKING CHANGE:”.
+  - Pattern: `type(scope)!: subject`
+  - Recognize types listed above; unknown types go to `Other`.
+  - Detect breaking changes if type/scope has a trailing ! or the body contains a line beginning with “BREAKING CHANGE:”.
 
 5. Collect commits diffs from current branch since its last common ancestor with the base:
 
-- Run: `git diff BASE..HEAD`
-- Replace `BASE` with the resolved base branch, usually `main`
+  - Run: `git diff BASE...HEAD`
+  - Replace `BASE` with the resolved base branch, usually `main`.
+  - This must compare `HEAD` against the merge-base with `BASE`, not against the current tip of `BASE`.
 
 6. Extract meaningful and important change notes from commit bodies and what you observe in the diff:
 
-- Use concise, user-relevant lines from bodies (prefer bullet-like lines starting with -, *, or short sentences).
-- Skip boilerplate and noise.
+  - Use concise, user-relevant lines from bodies (prefer bullet-like lines starting with -, *, or short sentences).
+  - Skip boilerplate and noise.
+  - Prefer impact-oriented notes over file-by-file implementation details.
+  - Use the read/readFile and search tools to gather additional context from relevant files if needed to understand the impact of changes and extract meaningful notes.
 
 7. Extract issue references from commit bodies:
 
-- Match patterns like closes #123, fixes #456, resolved/resolves #789.
-- Collect unique issue numbers and prepare a “Resolves the following issues:” section with a bulleted list of just the numbers (e.g., “- #123”). Do not include titles or extra text; GitHub will resolve them.
+  - Match patterns like close/closes/closed #123, fix/fixes/fixed #456, and resolve/resolves/resolved #789.
+  - Collect unique issue numbers and prepare a “Resolves the following issues:” section with a bulleted list of just the numbers (e.g., “- #123”). Do not include titles or extra text; GitHub will resolve them.
 
 8. Compose the PR content:
 
-- Title:
+  - Title:
     - Neutral, concise headline summarizing the main purpose/reason for the PR inferred from the commits (subjects and bodies).
     - 72 characters max, sentence case, no trailing period, no Conventional Commit prefixes.
-- Body:
+  - Body:
     - One or two sentences that explain the purpose/impact of the changes.
-    - A “Changes” section grouped by type in this order: feature, fix, perf, refactor, docs, test, build, ci, style.
-        - For each commit, create a bullet primarily from the subject; append brief, relevant details from the body where helpful.
-        - If scope is present, you may format as “scope: subject” for clarity.
-        - DO NOT include empty type  sections
+    - A “Changes” section grouped by type in this order: Feature, Fix, Performance, Refactor, Docs, Test, Build, CI, Style, Revert, Other.
+      - For each commit, create a bullet primarily from the subject; append brief, relevant details from the body where helpful.
+      - If scope is present, you may format as “scope: subject” for clarity.
+      - If one commit spans multiple concerns, place it under the single best-fit section instead of repeating it.
+      - DO NOT include empty type sections
     - If present, a “Breaking changes” section listing extracted breaking change notes.
     - If present, a “Resolves the following issues:” section as specified above.
+
+## Quality Checks
+
+- Ensure the title and summary reflect the branch-wide purpose, not just the latest commit.
+- Remove repetitive bullets caused by fixup or follow-up commits when the net change can be described once.
+- Prefer user-facing behavior, risk, and migration impact over low-level implementation trivia.
+- If the diff materially changes behavior that is not obvious from commit messages alone, incorporate that behavior into the body.
 
 ## Final Output Format
 
@@ -109,35 +125,38 @@ One–two sentence overview of purpose/impact.
 ## Breaking changes
 - Breaking change note(s) if any
 
-## feature
-- scope: subject — optional concise detail from body
+## Feature
+- scope: subject
 
-## fix
-- scope: subject — optional concise detail from body
+## Fix
+- scope: subject
 
-## perf
-- subject — detail
+## Performance
+- scope: subject
 
-## refactor
-- subject — detail
+## Refactor
+- scope: subject
 
-## docs
-- subject — detail
+## Docs
+- scope: subject
 
-## test
-- subject — detail
+## Test
+- scope: subject
 
-## build
-- subject — detail
+## Build
+- scope: subject
 
-## ci
-- subject — detail
+## CI
+- scope: subject
 
-## style
-- subject — detail
+## Style
+- scope: subject
 
-## revert
-- subject — detail
+## Revert
+- scope: subject
+
+## Other
+- scope: subject
 
 ## Resolves the following issues:
 - #123
@@ -147,6 +166,7 @@ One–two sentence overview of purpose/impact.
 **Remember:**
 - Only include sections that have content (omit empty type sections)
 - Omit "Breaking changes" if none exist
+- If there are breaking changes, list them as the first section in the body, before features and fixes
 - Omit "Resolves the following issues" if no issues are referenced
 
 ## Examples
@@ -164,14 +184,17 @@ Streamlines the login flow, hardens error handling, and clarifies auth-related m
 
 # Changes
 
-## feature
-- auth: simplify login flow — remove redundant redirects and unify error surfaces
+## Breaking changes
+- auth: remove support for legacy token exchange endpoint, clients must now use the new unified auth endpoint, which may require updates to custom integrations
 
-## fix
-- auth: handle token refresh edge cases — retry logic added for intermittent network failures
+## Feature
+- auth: simplify login flow, remove redundant redirects and unify error surfaces
 
-## docs
-- update README — add auth troubleshooting section and clearer setup steps
+## Fix
+- auth: handle token refresh edge cases, retry logic added for intermittent network failures
+
+## Docs
+- add auth troubleshooting section and clearer setup steps to README
 
 ## Resolves the following issues:
 - #123
