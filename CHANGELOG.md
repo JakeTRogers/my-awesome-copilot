@@ -1,3 +1,11 @@
+## v0.4.0 (2026-03-08)
+
+### Feature
+
+- **agents**: add target property and clarify question loop logic in promptly.agent.md
+- **prompts**: update pull-request prompt to add agent, argument-hint, and clarify instructions
+- **prompts**: clarify instructions, update description, and expand tool list in conventional-commit prompt
+
 ## v0.3.0 (2026-02-17)
 
 ### Feature
