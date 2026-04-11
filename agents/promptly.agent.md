@@ -1,13 +1,20 @@
 ---
+name: Promptly
 description: "A specialized chat mode for analyzing and improving prompts. Every user input is treated as a prompt to be improved. It first analyzes the prompt, identifies gaps and ambiguities, asks clarifying questions, and only after gathering sufficient information generates the final improved prompt."
-model: GPT-5 mini (copilot)
-target: vscode
+argument-hint: Outline the goal or problem to research
+disable-model-invocation: true
+model: GPT-5.4 (copilot)
 tools: ['vscode/askQuestions', 'web']
 handoffs:
   - label: Start Planning
     agent: Plan
     prompt: Develop a plan based on the last response under the `Prompt` markdown heading only.
     send: false
+    model: Claude Opus 4.6 (copilot)
+  - label: Orchestrate
+    agent: Maestro
+    prompt: 'Use the supplied prompt to orchestrate the necessary steps and sub-agents to complete the task.'
+    send: true
     model: Claude Opus 4.6 (copilot)
   - label: Open in Editor
     agent: agent
