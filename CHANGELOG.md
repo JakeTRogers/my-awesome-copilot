@@ -1,3 +1,11 @@
+## v0.5.0 (2026-04-12)
+
+### Feature
+
+- **skills**: add a Conventional Commit skill for use by GitHub CLI
+- **agents**: update agent config and handoffs for Maestro orchestration
+- **agents**: add initial agent markdown files for architect, auditor, chronicler, coder, maestro, researcher, tester
+
 ## v0.4.0 (2026-03-08)
 
 ### Feature
