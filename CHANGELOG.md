@@ -1,3 +1,9 @@
+## v0.5.1 (2026-06-14)
+
+### Fix
+
+- **prompt**: replace deprecated gpt 4.1 with gpt 5.4-mini
+
 ## v0.5.0 (2026-04-12)
 
 ### Feature
