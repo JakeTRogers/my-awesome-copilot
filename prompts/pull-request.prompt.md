@@ -3,7 +3,7 @@ name: pr
 description: 'Prompt and workflow for generating a PR title and a structured Markdown PR body by comparing the current branch against the main branch, grouping changes by Conventional Commit types, extracting meaningful notes from commit bodies, and listing issue references in a dedicated “Resolves” section.'
 agent: agent
 argument-hint: '[optional-base-branch]'
-model: GPT-4.1 (copilot)
+model: GPT-5.4 mini (copilot)
 tools: [vscode/askQuestions, execute/getTerminalOutput, execute/runInTerminal, read/readFile, search]
 ---
 

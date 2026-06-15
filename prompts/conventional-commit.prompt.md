@@ -3,7 +3,7 @@ name: cc
 description: 'Prompt and workflow for generating a Conventional Commit message from staged changes. Instructs Copilot to inspect git status and the staged diff, infer the primary change, and output a copy-friendly commit message.'
 agent: agent
 argument-hint: '[user provided context]'
-model: GPT-4.1 (copilot)
+model: GPT-5.4 mini (copilot)
 tools: [execute/getTerminalOutput, execute/runInTerminal, read/readFile, search, vscode/askQuestions]
 ---
 
