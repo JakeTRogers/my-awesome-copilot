@@ -1,3 +1,9 @@
+## v0.6.0 (2026-07-05)
+
+### Feature
+
+- **skills**: add validate-pr-review-comments skill
+
 ## v0.5.1 (2026-06-14)
 
 ### Fix
