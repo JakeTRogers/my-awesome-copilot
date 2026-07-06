@@ -33,6 +33,11 @@ tools: [execute/getTerminalOutput, execute/runInTerminal, read/readFile, search,
 
 BREAKING CHANGE: a commit with a `BREAKING CHANGE:` footer, or a `!` after the type or scope, introduces a breaking API change and correlates with MAJOR in Semantic Versioning. A breaking change can accompany any type.
 
+Additional constraints:
+
+- NEVER use `chore` as a commit type. Pick the most specific type from the list above instead.
+- Never use multiple scopes in a single commit. If a change spans areas, pick the primary scope or omit it.
+
 ## Workflow
 
 Execute these steps in order. Do not skip any step.
