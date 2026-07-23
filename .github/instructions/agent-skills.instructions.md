@@ -38,7 +38,6 @@ Each skill **must** have its own subdirectory containing at minimum a `SKILL.md`
 ---
 name: webapp-testing
 description: Toolkit for testing local web applications using Playwright. Use when asked to verify frontend functionality, debug UI behavior, capture browser screenshots, check for visual regressions, or view browser console logs. Supports Chrome, Firefox, and WebKit browsers.
-license: Complete terms in LICENSE.txt
 ---
 ```
 
@@ -46,7 +45,6 @@ license: Complete terms in LICENSE.txt
 |-------|----------|-------------|
 | `name` | Yes | Lowercase, hyphens for spaces, max 64 characters (e.g., `webapp-testing`) |
 | `description` | Yes | Clear description of capabilities AND use cases, max 1024 characters |
-| `license` | No | Reference to LICENSE.txt (e.g., `Complete terms in LICENSE.txt`) or SPDX identifier |
 
 ### Description Best Practices
 
@@ -103,7 +101,6 @@ Skills can include additional files that Copilot accesses on-demand:
 ```
 .github/skills/my-skill/
 ├── SKILL.md              # Required: Main instructions
-├── LICENSE.txt           # Recommended: License terms (Apache 2.0 typical)
 ├── scripts/              # Optional: Executable automation
 │   ├── helper.py         # Python script
 │   └── helper.ps1        # PowerShell script
@@ -118,8 +115,6 @@ Skills can include additional files that Copilot accesses on-demand:
     ├── scaffold.py       # Code scaffold the AI agent customizes
     └── config.template   # Config template the AI agent fills in
 ```
-
-> **LICENSE.txt**: When creating a skill, download the Apache 2.0 license text from https://www.apache.org/licenses/LICENSE-2.0.txt and save as `LICENSE.txt`. Update the copyright year and owner in the appendix section.
 
 ### Assets vs Templates: Key Distinction
 

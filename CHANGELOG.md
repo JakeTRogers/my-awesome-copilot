@@ -1,3 +1,16 @@
+## v0.7.0 (2026-07-23)
+
+### Feature
+
+- remove make-skill-template infavor of local anthropic skill-creator
+- **skills**: add repo-context skill and generate AGENTS.md
+- **skills**: add fixup-plan skill for mapping changes to branch commits
+
+### Fix
+
+- **prompts**: align commit rules across skill, prompt, and ccm wrapper
+- **skills**: repair broken fence and restructure validate-pr-review-comments
+
 ## v0.6.0 (2026-07-05)
 
 ### Feature

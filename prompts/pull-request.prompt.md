@@ -14,7 +14,7 @@ tools: [vscode/askQuestions, execute/getTerminalOutput, execute/runInTerminal, r
 1. **ALWAYS run all required git commands** - This is mandatory, not optional
 2. **Execute commands in the exact order specified** in the Workflow section
 3. **When this prompt is triggered again**, re-run all commands from the beginning to get current state
-4. **Output format**: Provide exactly 2 code blocks as specified - no additional text, explanations, or commands
+4. **Output format**: Provide exactly 2 code blocks as specified - no additional text, explanations, or commands. The only exception is the optional PR-creation confirmation described in the final section
 
 ## Content Guidelines
 
@@ -54,9 +54,9 @@ BREAKING CHANGE: indicated by a trailing ! after type/scope or a footer/body lin
 
 3. Collect commits unique to the current branch relative to the base (exclude merge commits):
 
-  - Run: `git log --no-merges --pretty=format:%H%x00%s%x00%b BASE..HEAD`
+  - Run: `git log --no-merges --pretty=format:%H%x00%s%x00%b%x1e BASE..HEAD`
   - Replace BASE with the resolved base branch.
-  - This must return per commit: SHA, subject, and body separated by NULs (%x00).
+  - This must return per commit: SHA, subject, and body separated by NULs (%x00), with each commit record terminated by a record separator (%x1e). Commit bodies contain newlines, so use %x1e — not line breaks — to detect where one commit ends and the next begins.
   - If this command returns no commits, use the `vscode/askQuestions` tool to ask whether the user wants to compare against a different base branch before proceeding.
 
 4. Parse commit messages using Conventional Commits to identify type, optional scope, and subject:
@@ -107,7 +107,7 @@ BREAKING CHANGE: indicated by a trailing ! after type/scope or a footer/body lin
 
 ## Final Output Format
 
-**CRITICAL**: Your response must contain ONLY the 2 code blocks below. No explanations, no git commands, no other text.
+**CRITICAL**: Your response must contain ONLY the 2 code blocks below (followed only by the optional PR-creation confirmation). No explanations, no git commands, no other text.
 
 **Block 1 — PR Title** (plain text):
 
@@ -168,6 +168,16 @@ One–two sentence overview of purpose/impact.
 - Omit "Breaking changes" if none exist
 - If there are breaking changes, list them as the first section in the body, before features and fixes
 - Omit "Resolves the following issues" if no issues are referenced
+
+## Optional: Create the PR
+
+After outputting the two blocks, use the `vscode/askQuestions` tool to ask whether to create the PR now. Only if the user confirms:
+
+1. Write the body block to a temporary file.
+2. Run: `gh pr create --base BASE --title "TITLE" --body-file FILE`
+3. Report the PR URL, then delete the temporary file.
+
+Never push the branch as part of this step; if the branch is not on the remote yet, tell the user to push it first and stop.
 
 ## Examples
 

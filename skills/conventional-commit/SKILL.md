@@ -1,7 +1,6 @@
 ---
 name: conventional-commit
 description: 'Generate Conventional Commit messages from provided staged Git context. Use when asked to write a commit message, summarize staged changes, classify a change as feat/fix/refactor/docs/test/build/ci/style/perf.'
-allowed-tools: [read, shell(git diff, git log, git status)]
 ---
 
 # Generate Conventional Commit messages from staged Git context
@@ -29,7 +28,9 @@ Choose one of these types:
 - `build` — build system or dependency changes
 - `ci` — CI configuration or workflow changes
 
-Use an optional scope when it improves clarity. You can use `git log <file>` to see past scopes used for a file or directory.
+Never use `chore` — pick the most specific type from the list above instead.
+
+Use an optional scope when it improves clarity. Never use multiple scopes in a single commit; if a change spans areas, pick the primary one or omit the scope. You can use `git log <file>` to see past scopes used for a file or directory.
 
 ## Drafting Rules
 

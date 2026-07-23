@@ -7,7 +7,9 @@ If someone else finds it useful, great.
 
 ## Structure
 
-- `copilot/instructions/` — rules of engagement (style, constraints, conventions)
-- `copilot/prompts/` — reusable prompt snippets (refactor, review, docs, etc.)
-- `copilot/agents/` — role prompts / agent specs (SRE, AppSec, Platform, etc.)
-- `copilot/skills/` — repeatable problem-solving playbooks + examples
+- `instructions/` — rules of engagement (style, constraints, conventions)
+- `prompts/` — reusable prompt files (`cc`, `pr`, etc.)
+- `agents/` — role prompts / agent specs (Maestro, Architect, Coder, etc.)
+- `skills/` — repeatable problem-solving playbooks + examples
+- `.github/instructions/` — authoring guides for the files in this repo (prompts, agents, skills)
+- `.github/skills/` — repo-scoped meta-skills (e.g. scaffolding new skills)
