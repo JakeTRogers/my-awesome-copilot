@@ -1,3 +1,9 @@
+## v0.7.1 (2026-07-23)
+
+### Fix
+
+- **promptly**: streamline Promptly handoffs and tools
+
 ## v0.7.0 (2026-07-23)
 
 ### Feature
