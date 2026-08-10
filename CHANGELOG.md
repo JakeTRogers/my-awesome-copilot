@@ -1,3 +1,9 @@
+## v0.7.2 (2026-08-09)
+
+### Fix
+
+- add pager guidance for git/gh commands in prompts & skills
+
 ## v0.7.1 (2026-07-23)
 
 ### Fix
