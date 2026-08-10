@@ -15,6 +15,7 @@ tools: [vscode/askQuestions, execute/getTerminalOutput, execute/runInTerminal, r
 2. **Execute commands in the exact order specified** in the Workflow section
 3. **When this prompt is triggered again**, re-run all commands from the beginning to get current state
 4. **Output format**: Provide exactly 2 code blocks as specified - no additional text, explanations, or commands. The only exception is the optional PR-creation confirmation described in the final section
+5. Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
 
 ## Content Guidelines
 

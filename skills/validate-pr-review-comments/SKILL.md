@@ -21,6 +21,7 @@ Triage the review comments on the current pull request using the GitHub CLI `gh`
 - Keep changes scoped to the review feedback; no unrelated changes or drive-by refactors.
 - **Never create commits.** The user's commits are GPG-signed with a YubiKey that requires physical touch, so no commit can be completed here. Modify the working tree only and hand the user suggested `git commit --fixup` commands to run manually.
 - Do not push branches, resolve or dismiss review threads, or submit a final PR review unless explicitly instructed.
+- Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
 
 ## Workflow
 

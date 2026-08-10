@@ -40,7 +40,7 @@ Additional constraints:
 
 ## Workflow
 
-Execute these steps in order. Do not skip any step.
+Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`. Execute these steps in order. Do not skip any step.
 
 1. Run `git status` in the terminal to review changed files.
 2. Run `git diff --cached` in the terminal to inspect staged changes.
