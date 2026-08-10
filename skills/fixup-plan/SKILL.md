@@ -14,6 +14,7 @@ Given uncommitted changes on a feature branch, determine which existing on-branc
 - **Never create commits, tags, or rebases yourself.** The user requires GPG-signed commits via a YubiKey that needs physical touch, so all `git commit` and `git rebase` commands must be left for the user to run manually.
 - Only analyze and stage-plan; do not `git add` unless explicitly asked.
 - Never target a `fixup!`, `squash!`, or `amend!` commit — always target the original commit.
+- Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
 
 ## Workflow
 

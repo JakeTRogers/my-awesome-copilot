@@ -44,6 +44,7 @@ Use an optional scope when it improves clarity. Never use multiple scopes in a s
 - Add a footer only for breaking changes or issue references.
 - If there are no staged changes in the provided context, output exactly `NO_STAGED_CHANGES`.
 - DO NOT output any explanation, reasoning, or commentary. Only the final commit message
+- Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
 
 ## Output Rules
 
