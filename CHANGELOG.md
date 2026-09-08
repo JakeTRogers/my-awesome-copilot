@@ -1,3 +1,9 @@
+## v0.8.0 (2026-09-07)
+
+### Feature
+
+- **promptly**: update w/ inspiration from Matt Pocock grilling skill
+
 ## v0.7.2 (2026-08-09)
 
 ### Fix
