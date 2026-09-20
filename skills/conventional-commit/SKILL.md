@@ -1,11 +1,11 @@
 ---
 name: conventional-commit
-description: 'Generate Conventional Commit messages from provided staged Git context. Use when asked to write a commit message, summarize staged changes, classify a change as feat/fix/refactor/docs/test/build/ci/style/perf.'
+description: 'Generate Conventional Commit messages by inspecting current staged Git changes or using provided staged Git context. Use when asked to write a commit message, summarize staged changes, or classify a change as feat/fix/refactor/docs/test/build/ci/style/perf.'
 ---
 
 # Generate Conventional Commit messages from staged Git context
 
-Use this skill to draft a Conventional Commit message from provided Git context such as `git status`, staged file lists, and `git diff --cached` output.
+Use this skill to draft a Conventional Commit message from the current staged changes or provided Git context such as `git status`, staged file lists, and `git diff --cached` output.
 
 ## When to Use This Skill
 
@@ -13,6 +13,21 @@ Use this skill to draft a Conventional Commit message from provided Git context 
 - User asks for a Conventional Commit
 - User provides staged Git context
 - User wants help choosing the correct Conventional Commit type
+
+## Repository Workflow
+
+When repository access is available, run these commands in order at the start of every invocation, even if the skill already ran in the same session:
+
+```bash
+PAGER=cat git status
+PAGER=cat git diff --cached
+PAGER=cat git log --author="$(git config user.name)" --pretty=format:'%s' --no-merges -30
+```
+
+- Treat `git diff --cached` as the source of truth. Use status and history only as context; never include unstaged or untracked changes in the message.
+- If the staged diff is empty, stop and ask whether the user wants to stage files or inspect a different diff target. Do not draft a commit message.
+- If repository access is unavailable, use provided staged-change context. Ask for that context when none is available.
+- Use recent authored subjects to match the user's established style and scope conventions without overriding this skill's rules.
 
 ## Commit Type Rules
 
@@ -34,7 +49,7 @@ Use an optional scope when it improves clarity. Never use multiple scopes in a s
 
 ## Drafting Rules
 
-- Base the message on the provided staged-change context.
+- Base the message on the current staged diff or provided staged-change context.
 - If the staged diff is ambiguous, read repository files only as needed to clarify intent.
 - Prefer a single commit message that captures the primary reason for the staged changes.
 - Use imperative mood.
@@ -42,8 +57,7 @@ Use an optional scope when it improves clarity. Never use multiple scopes in a s
 - Add a body only when the subject alone is not enough.
   - If you add a body, use markdown lists if it helps readability.
 - Add a footer only for breaking changes or issue references.
-- If there are no staged changes in the provided context, output exactly `NO_STAGED_CHANGES`.
-- DO NOT output any explanation, reasoning, or commentary. Only the final commit message
+- When a message can be drafted, do not output explanation, reasoning, or commentary. Output only the final commit message.
 - Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
 
 ## Output Rules
@@ -83,4 +97,4 @@ Optional body and footer may follow standard Git commit message formatting.
 
 ## References
 
-- Conventional Commits: https://www.conventionalcommits.org/
+- [Conventional Commits](https://www.conventionalcommits.org/)
