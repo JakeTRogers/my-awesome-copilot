@@ -9,8 +9,7 @@ Personal collection of GitHub Copilot / Claude Code prompts, agents, instruction
 
 ## Architecture
 
-- `prompts/` — VS Code prompt files (`*.prompt.md`), e.g. `cc` (conventional commit) and `pr` (pull request). Authoring guide: `.github/instructions/prompt.instructions.md`.
-- `skills/` — portable Agent Skills (`<name>/SKILL.md`) usable by both Copilot and Claude Code. Authoring guide: `.github/instructions/agent-skills.instructions.md`.
+- `skills/` — portable Agent Skills (`<name>/SKILL.md`) usable by both Copilot and Claude Code, e.g. `/pull-request`. Authoring guide: `.github/instructions/agent-skills.instructions.md`.
 - `agents/` — a Maestro-orchestrated multi-agent system (`*.agent.md`): Architect, Auditor, Chronicler, Coder, Researcher, Tester, plus the standalone Promptly prompt-engineering mode. Authoring guide: `.github/instructions/agents.instructions.md`.
 - `instructions/` — language/format conventions applied by glob (`applyTo` frontmatter): Go, Python, shell, markdown.
 
