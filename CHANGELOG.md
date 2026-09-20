@@ -1,3 +1,10 @@
+## v0.9.0 (2026-09-19)
+
+### Feature
+
+- **skills**: migrate deprecated pull-request prompt to a skill
+- **skill**: migrate deprecated prompt guidance into conventional-commit skill
+
 ## v0.8.0 (2026-09-07)
 
 ### Feature
