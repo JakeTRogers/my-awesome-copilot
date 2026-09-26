@@ -62,28 +62,32 @@ Use an optional scope when it improves clarity. Never use multiple scopes in a s
 
 ## Output Rules
 
-Output only the complete commit message as plain text:
-- no Markdown fences
-- no labels
-- no commentary
+Output only the complete commit message inside one fenced Markdown code block:
+- use a `text` language identifier so the response has a copy button
+- include the entire commit message in the block, including any body or footer
+- optional explanation or commentary may appear outside the block, but it must not be part of the suggested commit message
 
 Format:
 
-`<type>(<scope>): <description>`
+```text
+<type>(<scope>): <description>
+```
 
 or
 
-`<type>: <description>`
+```text
+<type>: <description>
+```
 
-Optional body and footer may follow standard Git commit message formatting.
+Optional body(prefer markdown lists for readability) and footer may follow standard Git commit message formatting.
 
 ## Gotchas
 
 - **Always** base the message on the current staged-change context, not unstaged or hypothetical changes.
 - **Prefer one primary purpose** when multiple files are staged. Do not list every file in the subject line.
 - **Do not** treat formatting or dependency updates as `feat` or `fix` unless the context clearly shows that.
-- **Use `build`** for dependency or build tooling changes.
-- **Use `ci`** for workflow and pipeline changes.
+- **Use `build`** for dev container or build tooling changes.
+- **Use `ci`** for workflow, hook, and pipeline changes.
 - **Use `refactor`** for restructuring that does not change behavior.
 - **Only use `!` or `BREAKING CHANGE:`** when the change is actually breaking.
 
