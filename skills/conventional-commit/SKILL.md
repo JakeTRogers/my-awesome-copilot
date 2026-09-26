@@ -1,178 +1,172 @@
 ---
 name: conventional-commit
-description: 'Generate Conventional Commit messages from staged or unstaged Git changes. Use when asked for a commit message, commit grouping, staging advice, a change summary, or help classifying a commit as feat/fix/refactor/docs/test/build/ci/style/perf.'
+description: 'Draft Conventional Commit messages from local Git changes: one message for staged changes, a revised message for the last commit, or staging groups with a message each for unstaged work. Use when asked for a commit message, to reword or amend the last commit message, how to split or stage changes into commits, or which Conventional Commit type (feat/fix/refactor/docs/test/build/ci/style/perf) fits. Not for fixups to existing branch commits (use fixup-plan) or pull request text (use pull-request).'
 ---
 
-# Generate Conventional Commit messages from Git changes
+# Conventional Commit
 
-Use this skill to draft Conventional Commit messages from current Git changes or provided Git context. When staged changes exist, use only the staged diff. When there are no staged changes, help the user decide whether the unstaged work belongs in one commit or several related commits, then provide the staging commands and complete message for each proposed commit.
+## Purpose
 
-## When to Use This Skill
+Draft Conventional Commit messages that the user reviews and edits in their own `git commit` editor. Use this skill for staged changes, for rewording or amending the last commit, and for splitting uncommitted work into commits. Use fixup-plan for changes that belong in existing branch commits and pull-request for PR text.
 
-- User asks for a commit message
-- User asks for a Conventional Commit
-- User provides staged or unstaged Git context
-- User asks how to group changes into commits or what to stage
-- User wants help choosing the correct Conventional Commit type
+## Constraints
 
+- Run only read-only commands: `git status`, `git diff`, `git log`, `git show`, `git config` lookups, and `cz check`. Never run `git add`, `git commit`, `git stash`, `git restore`, `git reset`, or anything else that changes the index, working tree, or history. The user signs commits with a hardware key and edits every message before committing, so they run those commands themselves.
+- Run every git command as `git --no-pager <command>`. `PAGER=cat` is ignored when `core.pager` is set, and a pager blocks agent terminals.
 
-## Repository Workflow
+## Workflow
 
-When repository access is available, run these commands in order at the start of every invocation, even if the skill already ran in the same session:
+### 1. Gather context
+
+Run these at the start of every invocation, even if they ran earlier in the session:
 
 ```bash
-PAGER=cat git status
-PAGER=cat git diff --cached
-PAGER=cat git log --author="$(git config user.name)" --pretty=format:'%s' --no-merges -30
+git --no-pager status --untracked-files=all
+git --no-pager diff --cached --stat
+git --no-pager log --no-merges --format=%s -30 --author="$(git config user.name)" --invert-grep --grep='^bump:'
 ```
 
-- Use the index state to select exactly one workflow:
-  - **Staged workflow:** If `git diff --cached` is non-empty, treat it as authoritative. Base the message only on staged changes, even when unstaged or untracked changes also exist.
-  - **Unstaged workflow:** If `git diff --cached` is empty, inspect tracked changes with `PAGER=cat git diff`. Use `git status --short` and `git ls-files --others --exclude-standard` to identify untracked paths, then inspect untracked files when their contents affect grouping or the message.
-  - **Clean workflow:** If the index and working tree are both clean, do not invent a message. Ask the user to provide or stage changes.
-- “No staged changes” means that `git diff --cached` is empty. It does not refer to whether the repository has commits in its history.
-- If the repository has no commits, the `git log` command may fail; continue with no history and use the available status, diff, and file contents. Do not treat missing history as a clean working tree.
-- If repository access is unavailable, use the provided Git context. Determine whether it describes staged changes, unstaged changes, or neither; ask for the missing context when necessary.
-- Use recent authored subjects to match the user's established style and scope conventions without overriding this skill's rules.
+Then run `git --no-pager diff --cached`. If `--stat` shows more than 500 changed lines, instead diff only the paths that inform the message with `git --no-pager diff --cached -- <path>`, and skip lockfiles, generated files, and vendored code.
 
-### Unstaged Change Grouping
+- If the prompt already provides git status and diff output (for example, from a wrapper script) or says not to run commands, use the provided context and run no commands in any step.
+- In a repository without commits, `git log` fails; continue without history.
+- To read a staged file, use `git --no-pager show :<path>`; the working-tree copy may contain unstaged edits. Describe only changes that appear in the diff.
 
-When the unstaged workflow applies:
+### 2. Select the mode
 
-1. Decide whether the changes express one coherent purpose or several unrelated purposes. Group files together when they implement, document, test, or configure the same logical change. Separate changes when they can be reviewed, reverted, or released independently.
-2. Include untracked files in the analysis when they are part of the working-tree changes. Do not silently omit them just because `git diff` does not display them.
-3. When different logical changes occur in the same file, do not suggest staging the whole file. Use `git add -p -- <file>` and explain which hunks belong to the current group.
-4. If the grouping is genuinely ambiguous, explain the uncertainty and ask one focused clarification question before producing staging commands. Do not present a speculative grouping as certain.
-5. Do not run `git add`, `git commit`, or any other command that changes the user's working tree. Present the commands for the user to run.
+Use the first row that matches:
 
-## Commit Type Rules
+| # | Condition | Mode |
+|---|-----------|------|
+| 1 | `git status` lists unmerged paths | Stop: resolve conflicts first |
+| 2 | `git status` reports a merge, cherry-pick, or revert in progress (a rebase in progress does not count) | Stop: keep the message git prepared |
+| 3 | The user asks to amend or reword the last commit | Amend |
+| 4 | The user asks to split or group all changes, including staged ones | Group (all changes) |
+| 5 | The staged diff is non-empty | Staged |
+| 6 | There are unstaged or untracked changes | Group (unstaged and untracked) |
+| 7 | Otherwise | Stop: nothing to commit |
 
-Choose one of these types:
+An empty staged diff means nothing is staged; it says nothing about whether the repository has commits.
 
-- `feat` — introduces a new feature
-- `fix` — patches a bug
-- `docs` — documentation only
-- `style` — formatting or non-semantic code style changes
-- `refactor` — code restructuring without bug fix or new feature
-- `perf` — performance improvement
-- `test` — add or correct tests
-- `build` — build system or dependency changes
-- `ci` — CI configuration or workflow changes
+- **Staged:** the staged diff is authoritative; ignore unstaged and untracked changes. If the staged changes match a group you proposed earlier in this conversation, reuse that group's message verbatim.
+- **Amend:** the message must describe everything the amended commit will contain. Also run:
 
-Never use `chore` — pick the most specific type from the list above instead.
+  ```bash
+  git --no-pager log -1 --format=%B
+  git --no-pager diff --cached HEAD~1
+  ```
 
-Use an optional scope when it improves clarity. Never use multiple scopes in a single commit; if a change spans areas, pick the primary one or omit the scope. You can use `git log <file>` to see past scopes used for a file or directory.
+  If HEAD has no parent, use `git --no-pager show HEAD` plus the staged diff instead. Treat the current message as a draft: keep what is accurate and correct the rest.
+- **Group:** also run `git --no-pager diff --stat` and `git --no-pager diff` (for all changes, `git --no-pager diff HEAD --stat` and `git --no-pager diff HEAD`), read untracked files whose contents affect grouping or the message, then follow step 3.
 
-## Drafting Rules
+### 3. Group changes
 
-- For the staged workflow, base the message on the current staged diff or provided staged-change context.
-- For the unstaged workflow, base each message on the files or hunks assigned to that group. Include untracked-file contents when relevant.
-- If the relevant diff is ambiguous, read repository files only as needed to clarify intent. If the intended grouping remains ambiguous, ask a focused question rather than guessing.
-- Prefer a single commit message that captures the primary reason for the staged changes.
-- Use imperative mood.
-- Keep the subject under 72 characters.
-- Add a body only when the subject alone is not enough.
-  - If you add a body, use markdown lists if it helps readability.
-- Add a footer only for breaking changes or issue references.
-- In the staged workflow, output only the final commit message as specified below. In the unstaged workflow, a brief grouping rationale is allowed when it helps explain why changes were combined or separated.
-- Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
+Group mode only:
 
-## Output Rules
+1. Put changes in the same commit when reverting one without the other would leave the repository broken or inconsistent, such as a feature with its tests and docs. Otherwise, separate them.
+2. Include untracked files; `git diff` does not show them.
+3. When one file holds changes for more than one group, stage it with `git add -p -- <shell-quoted-file>` and name the hunks that belong to each group by their `@@` header or enclosing function.
+4. Order groups so each commit works on its own, prerequisites first.
+5. If the grouping is genuinely ambiguous, ask one focused question before producing commands. If you cannot ask, use the fewest commits that satisfy rule 1 and state that assumption in one line.
 
-Choose the output contract that matches the repository state. The proposed message is always the complete commit message, including its subject and any body or footer; it is not only the body.
+### 4. Classify
 
-### Staged Workflow
+**Type.** Decide in order:
 
-Output only the complete commit message inside one fenced Markdown code block:
+1. If the change modifies code beyond comments (source, scripts, or AI instruction files such as prompts, skills, agent definitions, and `*.instructions.md`), classify by effect, not by file extension:
+   - `feat`: adds a capability
+   - `fix`: corrects wrong behavior
+   - `perf`: same behavior, faster or cheaper
+   - `style`: formatting or whitespace only
+   - `refactor`: same behavior, restructured
 
-- Use a `text` language identifier so the response has a copy button.
-- Include the entire message in the block, including any body or footer.
-- Do not include staging or commit commands, labels, or explanation.
+   Tests, docs, and dependency changes that accompany the code do not change its type.
+2. Otherwise, use the category of the primary change:
+   - `test`: tests only
+   - `docs`: human-facing documentation only, such as READMEs, guides, and code comments
+   - `build`: build system, packaging, dependency manifests and lockfiles, dev containers, and repository tooling config such as `.gitignore`, `.editorconfig`, linter and formatter config, and release config (`.cz.yaml`)
+   - `ci`: CI workflows, git and pre-commit hooks, Dependabot or Renovate config, and version bumps inside any of these
 
-Format:
+Never use `chore`. Mark a change as breaking only when existing users or consumers must change something: add `!` before the colon and a `BREAKING CHANGE: <what breaks and how to migrate>` footer.
 
-```text
-<type>(<scope>): <description>
-```
+**Scope.** Optional; never more than one:
 
-or
+1. The scope used most often for the primary path in `git --no-pager log -20 --format=%s -- <path>`, or in the provided recent subjects when commands are not allowed. Use its most frequent spelling.
+2. Otherwise, the component or directory name that best identifies what changed, such as `parser` or `skills`.
+3. Omit the scope when the change spans several areas.
 
-```text
-<type>: <description>
-```
+Match the wording and scope names of the recent subjects, but follow these rules where they disagree.
 
-Optional body(prefer markdown lists for readability) and footer may follow standard Git commit message formatting.
+### 5. Write the message
 
-### Unstaged Workflow
+- **Header:** `type(scope): description`, with `!` before the colon for breaking changes.
+  - Keep the whole line at 72 characters or fewer, including type and scope; aim for 60.
+  - Use the imperative mood, a lowercase first word unless it is an identifier or proper noun, and no trailing period.
+  - State the primary purpose; do not list files.
+- **Body:** add one only when the reason is not obvious from the header or there are two or more notable changes. Separate it from the header with a blank line and use `- ` bullets, at most five, wrapped at 72 characters. Explain what changed and why, not file by file. Use no markdown headings, and start no line with `#`.
+- **Footer:** only `BREAKING CHANGE:` and issue references such as `Refs: #123` or `Closes #123`. Take issue numbers only from the user, the branch name, or the diff; never invent them. Never add `Co-authored-by`, `Signed-off-by`, or tool attribution trailers; GPG signing is not a sign-off.
+- **Validate:** when commands are allowed, shell-quote the generated header as one argument and run `cz check -m <shell-quoted-header>`, revising the header until it passes. Skip this if `cz` is not installed.
 
-If all unstaged changes form one logical commit, output one group. If they belong in multiple commits, output one group for each logical commit. For every group:
+### 6. Output
 
-1. Optionally state a brief rationale and identify the paths or hunks in the group.
-2. Output one `bash` fenced block containing the staging command or commands for that group:
-  - Use `git add -- <paths>` for complete files.
-  - Use `git add -p -- <file>` when only selected hunks from a file belong in the group.
-3. Immediately follow it with one `text` fenced block containing the complete proposed commit message for that group.
+Use raw mode when the invoking prompt asks for it, for example a script that passes the output to `git commit -F`. Otherwise, use chat mode.
 
-Repeat this command-and-message pair for every group. Do not combine the staging command and commit message in one block, and do not include a `git commit` command.
+#### Chat mode
 
-Example with unrelated files:
+- **Staged and Amend:** output exactly one `text` fenced block containing the complete message: header, body, and footer. Output nothing else, except at most one line after the block, starting with `Note:`, when:
+  - the staged changes look like more than one logical change,
+  - a path has both staged and unstaged changes, or
+  - in Amend mode, `git status` says the branch is up to date with or behind its upstream, so amending requires a force push.
+- **Group:** for each group, in order:
+  1. One line: `Commit <n> of <total>: <why these changes belong together>`, naming any partial-file hunks.
+  2. One `bash` fenced block with the staging commands: `git add -- <shell-quoted-path>...` for whole files and `git add -p -- <shell-quoted-file>` for selected hunks. Shell-quote every path as one argument using POSIX single-quote escaping, including paths without whitespace. When grouping all changes and the index is not empty, start Commit 1's block with `git restore --staged -- :/`.
+  3. One `text` fenced block with the complete message.
+
+  Never include `git commit` commands.
+- **Stop:** one sentence stating the reason.
+
+#### Raw mode
+
+- Output the complete message as plain text: no fences, labels, notes, or commentary.
+- Only Staged and Amend modes produce a message. In any other mode, or when no message can be drafted, output exactly one line: `NO_COMMIT_MESSAGE: <short reason>`.
+
+#### Examples
+
+Staged mode, chat mode:
 
 ````markdown
-Group 1: The parser change and its test belong together.
-
-```bash
-git add -- src/parser.py tests/test_parser.py
-```
-
 ```text
-feat(parser): support quoted values
-```
+fix(parser): handle empty quoted values
 
-Group 2: The documentation update is independent.
-
-```bash
-git add -- docs/usage.md
-```
-
-```text
-docs: clarify quoted value syntax
+- treat "" as an empty string instead of a missing value
+- add regression tests for empty and whitespace-only values
 ```
 ````
 
-Example with unrelated hunks in one file:
+Group mode, chat mode:
 
 ````markdown
-Group 1: Stage only the parser hunks from `src/parser.py`.
+Commit 1 of 2: the empty-value fix and its regression test; in `src/parser.py`, stage only the hunk in `parse_quoted()`.
 
 ```bash
-git add -p -- src/parser.py
+git add -- 'tests/test_parser.py'
+git add -p -- 'src/parser.py'
 ```
 
 ```text
 fix(parser): handle empty quoted values
 ```
+
+Commit 2 of 2: the remaining `src/parser.py` hunk renames an internal helper and is independent of the fix.
+
+```bash
+git add -- 'src/parser.py'
+```
+
+```text
+refactor(parser): rename tokenize helper to split_tokens
+```
 ````
-
-## Gotchas
-
-- **Always** choose the workflow from the current index state: staged changes take precedence; an empty index invokes unstaged grouping.
-- **Prefer one primary purpose** when multiple files are staged. Do not list every file in the subject line.
-- Do not infer “no commits exist” from an empty staged diff. The relevant condition is whether the index contains changes.
-- Do not omit untracked files from unstaged grouping decisions.
-- Do not stage an entire file when its hunks belong to different logical commits; use `git add -p -- <file>`.
-- **Do not** treat formatting or dependency updates as `feat` or `fix` unless the context clearly shows that.
-- **Use `build`** for dev container or build tooling changes.
-- **Use `ci`** for workflow, hook, and pipeline changes.
-- **Use `refactor`** for restructuring that does not change behavior.
-- **Only use `!` or `BREAKING CHANGE:`** when the change is actually breaking.
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| The diff looks too large or mixed | Focus on the primary purpose of the staged changes and use the body for important secondary details. |
-| The type is unclear from the diff alone | Read only the relevant repository files needed to clarify the intent. |
-| The output is too verbose | Return only the final commit message, with no explanation. |
 
 ## References
 
