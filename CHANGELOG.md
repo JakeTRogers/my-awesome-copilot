@@ -1,3 +1,16 @@
+## v0.10.0 (2026-09-26)
+
+### Feature
+
+- **skills**: hand off pull-request drafts to gh pr create --editor
+- **skills**: add amend and raw modes to conventional-commit
+
+### Fix
+
+- **skills**: replace ineffective PAGER=cat with git --no-pager
+- **skills**: support unstaged conventional-commit workflow
+- **skills**: force conventional-commit message output format to fenced markdown block
+
 ## v0.9.0 (2026-09-19)
 
 ### Feature
