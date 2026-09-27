@@ -21,16 +21,16 @@ Triage the review comments on the current pull request using the GitHub CLI `gh`
 - Keep changes scoped to the review feedback; no unrelated changes or drive-by refactors.
 - **Never create commits.** The user's commits are GPG-signed with a YubiKey that requires physical touch, so no commit can be completed here. Modify the working tree only and hand the user suggested `git commit --fixup` commands to run manually.
 - Do not push branches, resolve or dismiss review threads, or submit a final PR review unless explicitly instructed.
-- Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
+- Run every git command as `git --no-pager <command>` and every GitHub CLI command as `GH_PAGER=cat gh <command>`. `PAGER=cat` is ignored when `core.pager` is set, and a pager blocks agent terminals.
 
 ## Workflow
 
 ### 1. Identify the Current PR
 
 ```bash
-gh pr view --json number,title,author,headRefName,baseRefName,reviewDecision,url
-git branch --show-current
-git status --short
+GH_PAGER=cat gh pr view --json number,title,author,headRefName,baseRefName,reviewDecision,url
+git --no-pager branch --show-current
+git --no-pager status --short
 ```
 
 If the repository, branch, PR, or `gh` authentication cannot be established, stop (see Failure and Clarification Conditions).
@@ -40,8 +40,8 @@ If the repository, branch, PR, or `gh` authentication cannot be established, sto
 Resolved-vs-unresolved state is only exposed by the GraphQL API, so fetch the review threads with their resolution state and REST comment IDs. Use `--paginate` so PRs with more than 100 threads are not silently truncated — it follows `pageInfo` and emits one JSON document per page (add `--slurp` to combine them into a single array):
 
 ```bash
-pr_number=$(gh pr view --json number -q .number)
-gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F pr="$pr_number" -f query='
+pr_number=$(GH_PAGER=cat gh pr view --json number -q .number)
+GH_PAGER=cat gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F pr="$pr_number" -f query='
   query($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
     repository(owner: $owner, name: $repo) {
       pullRequest(number: $pr) {
@@ -68,9 +68,9 @@ Process threads where `isResolved` is `false`. If every thread is already resolv
 For PR-level (non-inline) discussion and review summaries, supplement with:
 
 ```bash
-pr_number=$(gh pr view --json number -q .number)
-gh pr view --comments
-gh api "repos/{owner}/{repo}/pulls/${pr_number}/reviews"
+pr_number=$(GH_PAGER=cat gh pr view --json number -q .number)
+GH_PAGER=cat gh pr view --comments
+GH_PAGER=cat gh api "repos/{owner}/{repo}/pulls/${pr_number}/reviews"
 ```
 
 ### 3. Evaluate Each Comment
@@ -127,8 +127,8 @@ Draft a reply for every triaged comment, present the full set to the user, and w
 Reply directly on the review thread, not with a top-level PR comment. `gh pr comment` posts to the PR conversation, which detaches the reply from the thread — use the replies endpoint with the thread's REST comment ID (`databaseId` from step 2):
 
 ```bash
-pr_number=$(gh pr view --json number -q .number)
-gh api "repos/{owner}/{repo}/pulls/${pr_number}/comments/<COMMENT_ID>/replies" -f body='...'
+pr_number=$(GH_PAGER=cat gh pr view --json number -q .number)
+GH_PAGER=cat gh api "repos/{owner}/{repo}/pulls/${pr_number}/comments/<COMMENT_ID>/replies" -f body='...'
 ```
 
 The templates below are shapes, not boilerplate. Fill them with the specific technical reasoning for that comment — a reply that could be pasted under any comment tells the reviewer nothing.

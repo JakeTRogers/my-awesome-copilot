@@ -14,7 +14,7 @@ Given uncommitted changes on a feature branch, determine which existing on-branc
 - **Never create commits, tags, or rebases yourself.** The user requires GPG-signed commits via a YubiKey that needs physical touch, so all `git commit` and `git rebase` commands must be left for the user to run manually.
 - Only analyze and stage-plan; do not `git add` unless explicitly asked.
 - Never target a `fixup!`, `squash!`, or `amend!` commit — always target the original commit.
-- Beware of pagination in git and GitHub cli, set `PAGER=cat` and `GH_PAGER=cat`.
+- Run every git command as `git --no-pager <command>` and every GitHub CLI command as `GH_PAGER=cat gh <command>`. `PAGER=cat` is ignored when `core.pager` is set, and a pager blocks agent terminals.
 
 ## Workflow
 
@@ -23,20 +23,20 @@ Given uncommitted changes on a feature branch, determine which existing on-branc
 Find the merge-base with the base branch and list the on-branch commits, excluding autosquash commits:
 
 ```bash
-base_branch=$(gh pr view --json baseRefName -q .baseRefName 2>/dev/null || git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
-merge_base=$(git merge-base HEAD "origin/${base_branch}")
-git log --format='%h %s' --grep='^fixup! ' --grep='^squash! ' --grep='^amend! ' --invert-grep "${merge_base}..HEAD"
+base_branch=$(GH_PAGER=cat gh pr view --json baseRefName -q .baseRefName 2>/dev/null || git --no-pager symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+merge_base=$(git --no-pager merge-base HEAD "origin/${base_branch}")
+git --no-pager log --format='%h %s' --grep='^fixup! ' --grep='^squash! ' --grep='^amend! ' --invert-grep "${merge_base}..HEAD"
 ```
 
 If there are no on-branch commits, stop: there is nothing to fixup, so recommend a normal new commit instead.
 
 ### 2. Map each change to a target commit
 
-For each changed file (`git status --short`, `git diff HEAD`). Diff against `HEAD`, not the index: plain `git diff` misses anything already staged, and its old-side line numbers would not match a blame of `HEAD`.
+For each changed file (`git --no-pager status --short`, `git --no-pager diff HEAD`). Diff against `HEAD`, not the index: plain `git diff` misses anything already staged, and its old-side line numbers would not match a blame of `HEAD`.
 
-1. Prefer blame of the changed lines: for each modified hunk, run `git blame HEAD -L <start>,<end> -- <file>` using the old-side line numbers from `git diff -U0 HEAD`, and keep only commits that appear in the `${merge_base}..HEAD` list. The commit that last materially touched the changed lines is the default target. If blame lands on a pre-branch commit instead, the change edits base-branch code — check the file's on-branch history before declaring it new work.
+1. Prefer blame of the changed lines: for each modified hunk, run `git --no-pager blame HEAD -L <start>,<end> -- <file>` using the old-side line numbers from `git --no-pager diff -U0 HEAD`, and keep only commits that appear in the `${merge_base}..HEAD` list. The commit that last materially touched the changed lines is the default target. If blame lands on a pre-branch commit instead, the change edits base-branch code — check the file's on-branch history before declaring it new work.
 2. For added-only hunks (no old-side lines), blame the immediately surrounding context lines instead — the commit that owns the enclosing code is usually the right target.
-3. Fall back to file history when blame is still inconclusive (e.g. moved code): `git log --format='%h %s' "${merge_base}..HEAD" -- <file>`. A single on-branch commit touching the file is an automatic target.
+3. Fall back to file history when blame is still inconclusive (e.g. moved code): `git --no-pager log --format='%h %s' "${merge_base}..HEAD" -- <file>`. A single on-branch commit touching the file is an automatic target.
 4. New/untracked files have no fixup target by default; assign them to the on-branch commit that introduced the feature they extend, or recommend a standalone commit if they are genuinely independent.
 5. Renamed files: analyze history under the old path, but stage both old and new paths together in the same fixup.
 
@@ -75,9 +75,9 @@ Use `git add -p <file>` in the plan when a single file's hunks belong to differe
 
 ## Gotchas
 
-- Blame the **pre-image** of changed lines: pass `HEAD` explicitly (`git blame HEAD -L <start>,<end> -- <file>`) and use the old-side line numbers from `git diff -U0 HEAD`. Blaming the working tree (no revision) attributes modified lines to "Not Committed Yet".
+- Blame the **pre-image** of changed lines: pass `HEAD` explicitly (`git --no-pager blame HEAD -L <start>,<end> -- <file>`) and use the old-side line numbers from `git --no-pager diff -U0 HEAD`. Blaming the working tree (no revision) attributes modified lines to "Not Committed Yet".
 - Blame can land on an existing `fixup!` commit already on the branch (they are hidden from the target list but still exist in history). Redirect to the commit it amends — match the subject after the `fixup! ` prefix — and target that instead.
 - `git symbolic-ref refs/remotes/origin/HEAD` fails when `origin/HEAD` is unset (common in older clones) or there is no remote. Fix with `git remote set-head origin --auto`, or fall back to the local `main`/`master` branch.
-- `git log -L <start>,<end>:<file>` is a useful cross-check for line-range history but can be slow on large files — prefer targeted `git blame -L`.
+- `git --no-pager log -L <start>,<end>:<file>` is a useful cross-check for line-range history but can be slow on large files — prefer targeted `git blame -L`.
 - If the base branch is not available locally, `git fetch origin <base-branch>` first.
 - If the working tree mixes fixup-bound changes with unrelated user-owned edits, list the unrelated files separately and leave them out of the plan.
