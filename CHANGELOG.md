@@ -1,3 +1,9 @@
+## v0.10.1 (2026-09-29)
+
+### Fix
+
+- **skills**: read PR drafts with --body-file
+
 ## v0.10.0 (2026-09-26)
 
 ### Feature

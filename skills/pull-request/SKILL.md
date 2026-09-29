@@ -122,10 +122,10 @@ PR_FILE=$(git rev-parse --git-path PR_EDITMSG)
 cat >| "$PR_FILE" <<'<delimiter>'
 <body>
 <delimiter>
-gh pr create --editor --base <shell-quoted-base> --title <shell-quoted-title> --template "$PR_FILE"
+gh pr create --editor --base <shell-quoted-base> --title <shell-quoted-title> --body-file "$PR_FILE"
 ```
 
-The block saves the body to `.git/PR_EDITMSG`, which git never tracks and the next run overwrites. `--template` uses that file as seed text, then `--editor` opens the generated title and body for review. If the branch is not pushed, `gh` asks where to push it.
+The block saves the body to `.git/PR_EDITMSG`, which git never tracks and the next run overwrites. `--body-file` reads that file directly, and `--editor` opens the supplied title and body for review even when both are provided. Do not use `--template`: it selects a repository pull request template rather than reading an arbitrary draft file. If the branch is not pushed, `gh` asks where to push it.
 
 #### Example
 
@@ -158,7 +158,7 @@ Streamlines the login flow and hardens token refresh so users hit fewer failed s
 - Closes #123
 - Closes #456
 PR_BODY
-gh pr create --editor --base 'main' --title 'Improve authentication reliability and error handling' --template "$PR_FILE"
+gh pr create --editor --base 'main' --title 'Improve authentication reliability and error handling' --body-file "$PR_FILE"
 ```
 ````
 
