@@ -1,3 +1,10 @@
+## v0.11.0 (2026-10-29)
+
+### Feature
+
+- **skills**: add Promptly prompt-engineering skill
+- **skills**: add Not So Fast devil's advocate skill
+
 ## v0.10.1 (2026-09-29)
 
 ### Fix
