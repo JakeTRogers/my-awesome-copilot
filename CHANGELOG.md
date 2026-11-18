@@ -1,3 +1,9 @@
+## v0.11.1 (2026-11-17)
+
+### Fix
+
+- **skills**: address PR review comments one fixup at a time
+
 ## v0.11.0 (2026-10-29)
 
 ### Feature
