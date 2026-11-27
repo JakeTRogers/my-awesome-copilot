@@ -1,3 +1,25 @@
+## v1.0.0 (2026-11-27)
+
+### Feature
+
+- **skills**: add domain-modeling that asks through the question tool
+- **skills**: add grilling that asks rounds with the question tool
+- **skills**: add implement-spec that lands work by fast-forward
+- **skills**: remove repo-context skill
+- **agents**: remove the superseded Copilot custom agents
+- set up issue tracker, triage labels, and domain docs for skills
+
+### Fix
+
+- **skills**: fetch PR-level review feedback once
+- **skills**: let commit skills commit unsigned inside worktrees
+- remove stale prompt-file and meta-skill references
+- let agents commit unsigned inside worktrees
+
+### Refactor
+
+- drop CLAUDE.md pointer now that AGENTS.md loads directly
+
 ## v0.11.1 (2026-11-17)
 
 ### Fix
