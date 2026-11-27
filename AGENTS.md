@@ -15,7 +15,11 @@ Personal collection of GitHub Copilot / Claude Code prompts, agents, instruction
 
 ## Conventions
 
-- Commits: Conventional Commits enforced by commitizen (`.cz.yaml`) + pre-commit `commit-msg` hook. Never use the `chore` type; never use multiple scopes. Commits are GPG-signed by the user via YubiKey — agents must never create commits or tags; hand the user the commands instead.
+- Commits: Conventional Commits enforced by commitizen (`.cz.yaml`) + pre-commit `commit-msg` hook. Never use the `chore` type; never use multiple scopes.
+- Signing and history: the maintainer GPG-signs every commit via YubiKey and keeps history linear.
+  - In a worktree (`.worktrees/<name>`, on a local branch cut from the start branch): commit and rebase unsigned (`git -c commit.gpgsign=false commit|rebase`), rebase onto the start branch's tip, and land by fast-forward only. Never push or open a pull request from a worktree branch; remove the worktree and delete its branch once landed.
+  - Outside a worktree: stage changes and leave committing to the maintainer.
+  - Never create tags. After work lands, tell the maintainer to re-sign the start branch (`gresign`) before pushing.
 - Markdown: follow `instructions/markdown.instructions.md` — blank lines around headings/lists/fences, language on every fence, no bare URLs.
 - Skill frontmatter must stay portable across Copilot and Claude Code (agentskills.io spec); descriptions must state WHAT the skill does and WHEN to use it.
 - Prompts are self-contained (they must work where personal skills are not installed) but their rules must stay content-aligned with the corresponding skill.
