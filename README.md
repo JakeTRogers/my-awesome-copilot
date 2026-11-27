@@ -11,4 +11,3 @@ If someone else finds it useful, great.
 - `agents/` — agent specs (Promptly, Maestro, Architect, Coder, etc.)
 - `skills/` — repeatable problem-solving playbooks + examples (`/pull-request`, etc.)
 - `.github/instructions/` — authoring guides for the files in this repo (agents, skills)
-- `.github/skills/` — repo-scoped meta-skills (e.g. scaffolding new skills)

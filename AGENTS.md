@@ -1,6 +1,6 @@
 # my-awesome-copilot
 
-Personal collection of GitHub Copilot / Claude Code prompts, agents, instructions, and skills — a public notebook of patterns actually in use, not an awesome-list fork.
+Personal collection of GitHub Copilot / Claude Code agents, instructions, and skills — a public notebook of patterns actually in use, not an awesome-list fork.
 
 ## Commands
 
@@ -22,7 +22,6 @@ Personal collection of GitHub Copilot / Claude Code prompts, agents, instruction
   - Never create tags. After work lands, tell the maintainer to re-sign the start branch (`gresign`) before pushing.
 - Markdown: follow `instructions/markdown.instructions.md` — blank lines around headings/lists/fences, language on every fence, no bare URLs.
 - Skill frontmatter must stay portable across Copilot and Claude Code (agentskills.io spec); descriptions must state WHAT the skill does and WHEN to use it.
-- Prompts are self-contained (they must work where personal skills are not installed) but their rules must stay content-aligned with the corresponding skill.
 
 ## Gotchas
 
