@@ -9,4 +9,3 @@ If someone else finds it useful, great.
 
 - `instructions/` — rules of engagement (style, constraints, conventions)
 - `skills/` — repeatable problem-solving playbooks + examples (`/pull-request`, etc.)
-- `.github/instructions/` — authoring guides for the files in this repo (skills)

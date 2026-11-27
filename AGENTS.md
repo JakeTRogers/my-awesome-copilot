@@ -9,7 +9,7 @@ Personal collection of GitHub Copilot / Claude Code instructions and skills — 
 
 ## Architecture
 
-- `skills/` — portable Agent Skills (`<name>/SKILL.md`) usable by both Copilot and Claude Code, e.g. `/pull-request`. Authoring guide: `.github/instructions/agent-skills.instructions.md`.
+- `skills/` — portable Agent Skills (`<name>/SKILL.md`) usable by both Copilot and Claude Code, e.g. `/pull-request`.
 - `instructions/` — language/format conventions applied by glob (`applyTo` frontmatter): Go, Python, shell, markdown.
 
 ## Conventions
