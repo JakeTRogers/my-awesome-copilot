@@ -1,6 +1,6 @@
 # my-awesome-copilot
 
-Personal collection of GitHub Copilot / Claude Code agents, instructions, and skills — a public notebook of patterns actually in use, not an awesome-list fork.
+Personal collection of GitHub Copilot / Claude Code instructions and skills — a public notebook of patterns actually in use, not an awesome-list fork.
 
 ## Commands
 
@@ -10,7 +10,6 @@ Personal collection of GitHub Copilot / Claude Code agents, instructions, and sk
 ## Architecture
 
 - `skills/` — portable Agent Skills (`<name>/SKILL.md`) usable by both Copilot and Claude Code, e.g. `/pull-request`. Authoring guide: `.github/instructions/agent-skills.instructions.md`.
-- `agents/` — a Maestro-orchestrated multi-agent system (`*.agent.md`): Architect, Auditor, Chronicler, Coder, Researcher, Tester, plus the standalone Promptly prompt-engineering mode. Authoring guide: `.github/instructions/agents.instructions.md`.
 - `instructions/` — language/format conventions applied by glob (`applyTo` frontmatter): Go, Python, shell, markdown.
 
 ## Conventions
