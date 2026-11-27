@@ -70,12 +70,12 @@ GH_PAGER=cat gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F pr
 
 Process threads where `isResolved` is `false`. If every thread is already resolved and there is no unaddressed PR-level feedback, report that there is nothing to triage and stop. Keep each thread's first `databaseId` — it is the REST comment ID needed to reply to that thread in step 7. If a thread's `totalCount` exceeds 50, say so — its remaining comments were not fetched. Treat `isOutdated: true` as a hint that later commits may have already addressed the concern; verify against the current code before classifying the thread as obsolete.
 
-For PR-level (non-inline) discussion and review summaries, supplement with:
+For PR-level (non-inline) discussion and review summaries, fetch conversation comments and review bodies once each. Avoid `gh pr view --comments`: it also prints every review body, which duplicates the reviews endpoint. A bot review's body is cut before its first `<details>` block, where Copilot puts its overview; the review threads above already carry its findings. Human review bodies stay whole. An empty `COMMENTED` review only wraps inline comments, so it is skipped; an approval, change request, or dismissal stays even with an empty body, since its state is the feedback.
 
 ```bash
 pr_number=$(GH_PAGER=cat gh pr view --json number -q .number)
-GH_PAGER=cat gh pr view --comments
-GH_PAGER=cat gh api "repos/{owner}/{repo}/pulls/${pr_number}/reviews"
+GH_PAGER=cat gh api --paginate "repos/{owner}/{repo}/issues/${pr_number}/comments" --jq '.[] | "--- comment by \(.user.login)\n\(.body)"'
+GH_PAGER=cat gh api --paginate "repos/{owner}/{repo}/pulls/${pr_number}/reviews" --jq '.[] | select(.body != "" or .state != "COMMENTED") | "--- review by \(.user.login) (\(.state))\n\(if .user.type == "Bot" then .body | split("<details")[0] else .body end)"'
 ```
 
 ### 3. Evaluate Each Comment
