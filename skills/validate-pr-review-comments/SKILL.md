@@ -7,9 +7,9 @@ description: 'Inspect and evaluate GitHub PR review comments, implement only val
 
 ## Purpose
 
-Triage the review comments on the current pull request using the GitHub CLI `gh`: evaluate each comment on its technical merits, then work through the valid ones one at a time — implement the fix, identify the branch commit it belongs in, and hand the user the fixup commands before starting the next comment. Finish by replying to each thread with a clear position.
+Triage the review comments on the current pull request using the GitHub CLI `gh`: evaluate each comment on its technical merits, then work through the valid ones one at a time — implement the fix, identify the branch commit it belongs in, and commit it as an unsigned fixup of that commit before starting the next comment. Finish by replying to each thread with a clear position.
 
-Addressing comments one at a time keeps the working tree limited to a single fix whenever the user commits. Each fixup can stage whole files, so the user never has to split mixed changes across commits with `git add -p`.
+Addressing comments one at a time keeps the working tree limited to a single fix at every commit. Each fixup stages whole files, so mixed changes never need splitting across commits with `git add -p`.
 
 ## Prerequisites
 
@@ -21,8 +21,10 @@ Addressing comments one at a time keeps the working tree limited to a single fix
 - Evaluate before implementing. Reviewers act in good faith but rarely have full context — a suggestion can be wrong, already handled, or out of scope. Blindly applying every suggestion degrades the code, and a well-reasoned "no" is often the more useful reply.
 - Reply to every triaged comment with a concise, professional, technically grounded position — whether or not it results in a change. Replies are immediately visible to reviewers and cannot be quietly retracted, so draft the full set locally and post only after the user approves it.
 - Keep changes scoped to the review feedback; no unrelated changes or drive-by refactors.
-- **One comment, one fixup at a time.** Never start editing for the next comment while the previous fix is still uncommitted. Accumulated fixes for different target commits force the user into `git add -p`, which is what this workflow exists to avoid.
-- **Never create commits.** The user's commits are GPG-signed with a YubiKey that requires physical touch, so no commit can be completed here. Modify the working tree only and hand the user suggested `git commit --fixup` commands to run manually.
+- **One comment, one fixup at a time.** Commit each fix before editing for the next comment, so every fixup holds exactly one comment's change.
+- **Commit fixups yourself, unsigned**, with `git -c commit.gpgsign=false commit --fixup=<sha>` (or `--fixup=amend:<sha>`). A fixup never survives on its own, so its missing signature costs nothing.
+- **Leave the step 8 rebase to the user.** It folds every fixup into its target and is where the user signs the result. In a `.worktrees/` worktree it waits until the branch lands, because rewriting commits already on the start branch stops the fast-forward.
+- Leave tagging to the user: create no tags.
 - Do not push branches, resolve or dismiss review threads, or submit a final PR review unless explicitly instructed.
 - Run every git command as `git --no-pager <command>` and every GitHub CLI command as `GH_PAGER=cat gh <command>`. `PAGER=cat` is ignored when `core.pager` is set, and a pager blocks agent terminals.
 
@@ -141,33 +143,33 @@ Run the most targeted relevant checks from the repository's documented test/lint
 
 #### 5d. Identify the Target Commit
 
-Use the **fixup-plan** skill when it is installed; otherwise apply its approach to this fix's diff:
+Map this fix's diff to its target with the steps below, the same mapping the **fixup-plan** skill uses. Do not invoke fixup-plan itself: it commits, and this step only picks the target. Committing happens in step 5f, after any multi-target split.
 
 - Blame the changed lines' pre-image (`git --no-pager blame HEAD -L <start>,<end> -- <file>`, using old-side line numbers from `git --no-pager diff -U0 HEAD`) and keep only commits in `${merge_base}..HEAD`. For added-only hunks, blame the surrounding context lines.
 - Fall back to per-file history (`git --no-pager log --format='%h %s' "${merge_base}..HEAD" -- <file>`) when blame is inconclusive.
 - With only one commit on the branch, that commit is the target.
-- Blame may land on a `fixup!` commit the user created earlier in this loop. Target the original commit it amends, matching the subject after the `fixup! ` prefix.
+- Blame may land on a `fixup!` commit created earlier in this loop. Target the original commit it amends, matching the subject after the `fixup! ` prefix.
 - If the fix belongs to no existing commit (genuinely new work), recommend a standalone conventional commit instead of a fixup.
 - If the target cannot be confidently determined, say so and ask the user to choose rather than guessing.
 
-If the fix spans more than one target commit, do not hand over a mixed diff. Undo your edits back to the clean state confirmed in 5a, re-apply only the part that belongs to the first target, and finish this loop for it (5c-5f). Then repeat for the next target. Every handoff must stage cleanly with whole-file `git add`.
+If the fix spans more than one target commit, split it before committing. Undo your edits back to the clean state confirmed in 5a, re-apply only the part that belongs to the first target, and finish this loop for it (5c-5f). Then repeat for the next target. Every fixup must stage cleanly with whole-file `git add`.
 
 #### 5e. Draft the Reply
 
 Draft this comment's reply now, while the reasoning is fresh, using the templates in step 7. Hold it for approval — do not post.
 
-#### 5f. Hand Off and Wait
+#### 5f. Commit the Fixup
 
-Present the comment (reviewer, file, concern), a short description of the change, the validation run, and the target commit with its rationale. Then give the exact commands. The working tree holds only this fix, so stage whole files:
+The working tree holds only this fix, so stage whole files and commit:
 
 ```bash
 git add <paths>
-git commit --fixup <commit-sha>
+git -c commit.gpgsign=false commit --fixup <commit-sha>
 ```
 
-For genuinely new work, give a standalone conventional commit message instead of `--fixup`.
+For genuinely new work, commit with the **conventional-commit** skill instead of `--fixup`. Outside a worktree that skill hands the commit to the user, so wait for them to confirm it before moving on.
 
-Stop and wait for the user to confirm they committed, or to ask for revisions. Do not start the next comment until they do. Then check that `git --no-pager log -1 --format='%h %s'` shows the expected `fixup! <subject>` commit and the working tree is clean. Record the fixup's short SHA and target for the summary.
+Done when `git --no-pager log -1 --format='%h %s'` shows the expected `fixup! <subject>` commit and the working tree is clean. Report the comment (reviewer, file, concern), the change, the validation run, and the fixup's short SHA with its target and rationale, then start the next work unit.
 
 ### 6. Validate the Combined Result
 
@@ -210,15 +212,15 @@ When already addressed:
 This appears to already be addressed by [brief explanation or commit/change reference]. No further change needed.
 ```
 
-### 8. Recommend the Autosquash Rebase
+### 8. Fold the Fixups In
 
-Once all fixups are committed, give the user the command to fold them into their targets — never run it:
+Once all fixups are committed, the user folds them into their targets with an autosquash rebase. Give them this command:
 
 ```bash
 git rebase -i --autosquash <merge-base>
 ```
 
-If the branch is already pushed, remind the user that the rebase rewrites history, so the final push needs `git push --force-with-lease`.
+In a worktree, the user lands the branch first. If the branch is already pushed, remind the user that the rebase rewrites history, so the final push needs `git push --force-with-lease`.
 
 ### 9. Final Summary
 
@@ -256,6 +258,8 @@ Close with this template, omitting any section with no entries:
 
 ### Next Step
 
+[The fixups are committed. In a worktree, land the branch first; then run the rebase.]
+
 ```bash
 git rebase -i --autosquash <merge-base>
 ```
@@ -274,4 +278,4 @@ Stop and ask the user for clarification if:
 - The working tree is not clean at the start of the workflow or before the next comment's fix (step 5a).
 - A fix's target commit cannot be confidently determined (step 5d).
 - The base branch or merge base cannot be determined.
-- A requested action would require committing, signing, pushing, resolving threads, dismissing reviews, submitting a PR review, or posting replies the user has not approved.
+- A requested action would require committing anything but a fixup, rebasing, signing, pushing, resolving threads, dismissing reviews, submitting a PR review, or posting replies the user has not approved.

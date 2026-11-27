@@ -1,18 +1,19 @@
 ---
 name: fixup-plan
-description: 'Map uncommitted working-tree changes to the existing branch commits they belong to, then produce git commit --fixup and autosquash rebase commands for the user to run. Use when asked which commit a change belongs to, to plan fixup commits, to organize changes into fixups, to prepare an autosquash rebase, or after implementing review feedback on a branch with multiple commits.'
+description: 'Map uncommitted working-tree changes to the existing branch commits they belong to and commit one unsigned git commit --fixup per target, leaving the autosquash rebase to the user. Use when asked which commit a change belongs to, to plan fixup commits, to organize changes into fixups, to prepare an autosquash rebase, or after implementing review feedback on a branch with multiple commits.'
 ---
 
 # Fixup Plan
 
 ## Purpose
 
-Given uncommitted changes on a feature branch, determine which existing on-branch commit each change logically belongs to, and output the `git commit --fixup` commands that fold them in cleanly. This mirrors an interactive fixup helper: blame the changed lines, match them to on-branch commits, group files by target, and finish with an autosquash rebase.
+Given uncommitted changes on a feature branch, determine which existing on-branch commit each change logically belongs to, and commit one `git commit --fixup` per target. This mirrors an interactive fixup helper: blame the changed lines, match them to on-branch commits, group files by target, and commit each group as a fixup.
 
 ## Constraints
 
-- **Never create commits, tags, or rebases yourself.** The user requires GPG-signed commits via a YubiKey that needs physical touch, so all `git commit` and `git rebase` commands must be left for the user to run manually.
-- Only analyze and stage-plan; do not `git add` unless explicitly asked.
+- Commit each group yourself, unsigned: `git -c commit.gpgsign=false commit --fixup=<sha>`, or `--fixup=amend:<sha>` when the target's message must change too. A fixup never survives on its own, so its missing signature costs nothing.
+- Leave the autosquash rebase to the user. It folds every fixup into its target and is where the user signs the result, so run it only when they ask. In a `.worktrees/` worktree it waits until the branch lands, because rewriting commits already on the start branch stops the fast-forward.
+- Leave tagging to the user: create no tags.
 - Never target a `fixup!`, `squash!`, or `amend!` commit — always target the original commit.
 - Run every git command as `git --no-pager <command>` and every GitHub CLI command as `GH_PAGER=cat gh <command>`. `PAGER=cat` is ignored when `core.pager` is set, and a pager blocks agent terminals.
 
@@ -43,35 +44,40 @@ For each changed file (`git --no-pager status --short`, `git --no-pager diff HEA
 ### 3. Classify the outcome
 
 - **Single commit on branch** — one fixup at the end is enough; no per-file analysis needed.
-- **Multiple commits, clean mapping** — group files (or hunks, via `git add -p`) by target commit, one fixup per target.
-- **Ambiguous mapping** — say so explicitly and recommend the user review the diff before choosing; do not guess silently.
+- **Multiple commits, clean mapping** — group files (or hunks) by target commit, one fixup per target.
+- **Ambiguous mapping** — name the candidate targets and ask the user to choose before committing that group.
 - **Genuinely new work** — recommend a standalone conventional commit instead of a fixup.
 
-### 4. Output the plan
+### 4. Commit the fixups
 
-Present a grouped summary, then the exact commands. Example:
-
-```text
-a1b2c3d feat(parser): add array support
-  - src/parser.go        (blame: lines 40-55 introduced by a1b2c3d)
-  - src/parser_test.go   (only on-branch commit touching file)
-e4f5a6b fix(cli): handle empty input
-  - cmd/root.go          (blame: lines 12-14)
-```
+Commit each group in turn, staging only that group:
 
 ```bash
 git add src/parser.go src/parser_test.go
-git commit --fixup a1b2c3d
+git -c commit.gpgsign=false commit --fixup a1b2c3d
 
 git add cmd/root.go
-git commit --fixup e4f5a6b
+git -c commit.gpgsign=false commit --fixup e4f5a6b
+```
 
-git rebase -i --autosquash <merge-base>
+When one file's hunks belong to different targets, stage only the current target's hunks: write them to a patch file and run `git apply --cached <patch>`. `git add -p` needs an interactive terminal.
+
+Done when every mapped group is a `fixup!` commit and only the unmapped changes remain in the working tree.
+
+### 5. Report
+
+Report each fixup with the evidence for its target, then the rebase that folds them in:
+
+```text
+f1e2d3c fixup! feat(parser): add array support  -> a1b2c3d
+  - src/parser.go        (blame: lines 40-55 introduced by a1b2c3d)
+  - src/parser_test.go   (only on-branch commit touching file)
+9a8b7c6 fixup! fix(cli): handle empty input     -> e4f5a6b
+  - cmd/root.go          (blame: lines 12-14)
+Autosquash left to the user: git rebase -i --autosquash <merge-base>
 ```
 
 If the branch is already pushed, remind the user that the autosquash rebase rewrites history, so the final push needs `git push --force-with-lease`.
-
-Use `git add -p <file>` in the plan when a single file's hunks belong to different target commits.
 
 ## Gotchas
 
@@ -80,4 +86,4 @@ Use `git add -p <file>` in the plan when a single file's hunks belong to differe
 - `git symbolic-ref refs/remotes/origin/HEAD` fails when `origin/HEAD` is unset (common in older clones) or there is no remote. Fix with `git remote set-head origin --auto`, or fall back to the local `main`/`master` branch.
 - `git --no-pager log -L <start>,<end>:<file>` is a useful cross-check for line-range history but can be slow on large files — prefer targeted `git blame -L`.
 - If the base branch is not available locally, `git fetch origin <base-branch>` first.
-- If the working tree mixes fixup-bound changes with unrelated user-owned edits, list the unrelated files separately and leave them out of the plan.
+- If the working tree mixes fixup-bound changes with unrelated user-owned edits, list the unrelated files separately and leave them uncommitted.

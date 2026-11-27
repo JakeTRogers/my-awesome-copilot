@@ -1,17 +1,30 @@
 ---
 name: conventional-commit
-description: 'Draft Conventional Commit messages from local Git changes: one message for staged changes, a revised message for the last commit, or staging groups with a message each for unstaged work. Use when asked for a commit message, to reword or amend the last commit message, how to split or stage changes into commits, or which Conventional Commit type (feat/fix/refactor/docs/test/build/ci/style/perf) fits. Not for fixups to existing branch commits (use fixup-plan) or pull request text (use pull-request).'
+description: 'Draft Conventional Commit messages from local Git changes: one message for staged changes, a revised message for the last commit, or staging groups with a message each for unstaged work; inside a .worktrees/ worktree it also stages and commits them unsigned, outside one it hands the user the commands. Use when asked for a commit message, to reword or amend the last commit message, how to split or stage changes into commits, or which Conventional Commit type (feat/fix/refactor/docs/test/build/ci/style/perf) fits. Not for fixups to existing branch commits (use fixup-plan) or pull request text (use pull-request).'
 ---
 
 # Conventional Commit
 
 ## Purpose
 
-Draft Conventional Commit messages that the user reviews and edits in their own `git commit` editor. Use this skill for staged changes, for rewording or amending the last commit, and for splitting uncommitted work into commits. Use fixup-plan for changes that belong in existing branch commits and pull-request for PR text.
+Draft Conventional Commit messages and get each one committed: outside a worktree the user reviews and edits it in their own `git commit` editor; in a worktree you commit it yourself (see Constraints). Use this skill for staged changes, for rewording or amending the last commit, and for splitting uncommitted work into commits. Use fixup-plan for changes that belong in existing branch commits and pull-request for PR text.
 
 ## Constraints
 
-- Run only read-only commands: `git status`, `git diff`, `git log`, `git show`, `git config` lookups, and `cz check`. Never run `git add`, `git commit`, `git stash`, `git restore`, `git reset`, or anything else that changes the index, working tree, or history. The user signs commits with a hardware key and edits every message before committing, so they run those commands themselves.
+- First check whether you are in a worktree: one whose top level sits under `<repo root>/.worktrees/`. Any other checkout, including a linked worktree elsewhere, counts as outside. This prints which:
+
+  ```bash
+  case "$(git rev-parse --show-toplevel)/" in
+    "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/.worktrees/"*) echo worktree ;;
+    *) echo outside ;;
+  esac
+  ```
+
+- **Outside a worktree**, run only read-only commands: `git status`, `git diff`, `git log`, `git show`, `git config` lookups, and `cz check`. Changing the index, working tree, or history (`git add`, `git commit`, `git stash`, `git restore`, `git reset`) is left to the user, who signs commits with a hardware key outside a worktree and edits every message before committing.
+- **In a worktree**, also stage and commit with the drafted message, unsigned: `git -c commit.gpgsign=false commit -F <message-file>` (add `--amend` in Amend mode). The user re-signs the branch after it lands. Two exceptions stay read-only, as outside a worktree:
+  - Raw mode, or a prompt that supplies the context or says not to run commands (step 1): the caller commits with the returned message.
+  - Amend mode when HEAD is also on another branch. A new worktree branch starts at the start branch's tip, and amending that commit stops the branch from fast-forwarding onto it. Amend only when `git --no-pager branch --contains HEAD` lists the current branch alone; otherwise output the message and leave the rewording to the user.
+- Leave tagging to the user: create no tags in either case.
 - Run every git command as `git --no-pager <command>`. `PAGER=cat` is ignored when `core.pager` is set, and a pager blocks agent terminals.
 
 ## Workflow
@@ -122,7 +135,7 @@ Use raw mode when the invoking prompt asks for it, for example a script that pas
   2. One `bash` fenced block with the staging commands: `git add -- <shell-quoted-path>...` for whole files and `git add -p -- <shell-quoted-file>` for selected hunks. Shell-quote every path as one argument using POSIX single-quote escaping, including paths without whitespace. When grouping all changes and the index is not empty, start Commit 1's block with `git restore --staged -- :/`.
   3. One `text` fenced block with the complete message.
 
-  Never include `git commit` commands.
+  Outside a worktree, the user runs the commits, so the output carries staging commands and messages only. In a worktree, run each group's staging commands and commit it unsigned before staging the next group.
 - **Stop:** one sentence stating the reason.
 
 #### Raw mode
