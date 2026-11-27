@@ -23,3 +23,17 @@ Personal collection of GitHub Copilot / Claude Code prompts, agents, instruction
 ## Gotchas
 
 - Skill bodies embedding markdown templates that contain code fences must use 4-backtick outer fences to avoid premature fence termination. Otherwise use standard 3-backtick fences.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `JakeTRogers/my-awesome-copilot`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels, each label string the same as its role name. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
